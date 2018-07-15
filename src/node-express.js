@@ -19,8 +19,8 @@ app.get('/', function(req, res) {
 // using the configured router
 app.use('/wiki', wikiRouter);
 
-// serving static files that are in 'assets' directory
-app.use(express.static('assets'));
+// serving static files that are in 'public' directory
+app.use(express.static('pubic'));
 
 app.listen(8000, function() {
   console.log('Example app listening on port 8000!');
