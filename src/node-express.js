@@ -20,7 +20,7 @@ app.get('/', function(req, res) {
 app.use('/wiki', wikiRouter);
 
 // serving static files that are in 'public' directory
-app.use(express.static('pubic'));
+app.use(express.static('../public'));
 
 app.listen(8000, function() {
   console.log('Example app listening on port 8000!');
