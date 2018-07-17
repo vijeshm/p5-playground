@@ -48,7 +48,7 @@ function setup() {
       return score2 - score1;
     }
     
-    var k = 5;
+    var k = 15;
     for (var i = 0; i < k; i++) {
       var name = data.users[i].name;
       var div = createDiv(name + ': ' + similarityScores[name]);
