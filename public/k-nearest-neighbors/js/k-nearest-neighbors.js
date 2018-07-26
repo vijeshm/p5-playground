@@ -8,35 +8,55 @@ function preload() {
 function setup() {
   noCanvas();
   var users = {};
-  var dropdown1 = createSelect();
-  for (var i = 0; i < data.users.length; i++) {
-    var name = data.users[i].name;
+  var titles = data.titles;
+  var dropdowns = [];
 
-    dropdown1.option(name);
-    users[name] = data.users[i];
+  for (var i = 0; i < data.titles.length; i++) {
+    var div = createDiv(titles[i]);
+    var dropdown = createSelect('');
+    dropdown.title = titles[i];
+    dropdown.parent(div);
+    dropdowns.push(dropdown);
+
+    dropdown.option('not seen');
+    for (var star = 1; star < 6; star++) {
+      dropdown.option(star);
+    }
   }
 
   var button = createButton('Submit');
   var resultP = createP();
 
-  button.mousePressed(findNearestNeighbors);
+  button.mousePressed(predictRatings);
 
-  function findNearestNeighbors() {
+  function predictRatings() {
+    var newUser = {};
+
+    for (var i = 0; i < dropdowns.length; i++) {
+      var title = dropdowns[i].title;
+      var rating = dropdowns[i].value();
+
+      if (rating === 'not seen') {
+        rating = null;
+      }
+
+      newUser[title] = rating;
+    }
+
+    findNearestNeighbors(newUser);
+  }
+
+  function findNearestNeighbors(user) {
     for (var i = 0; i < resultDivs.length; i++) {
       resultDivs[i].remove();
     }
     resultDivs = [];
 
-    var name1 = dropdown1.value();
     var similarityScores = {};
-    for(var i = 0; i < data.users.length; i++) {
-      var other = data.users[i].name;
-      if (other != name1) {
-        var similarity = euclideanDistance(other, name1);
-        similarityScores[other] = similarity;
-      } else {
-        similarityScores[other] = -1;
-      }
+    for (var i = 0; i < data.users.length; i++) {
+      var other = data.users[i];
+      var similarity = euclideanDistance(other, user);
+      similarityScores[other.name] = similarity;
     }
 
     data.users.sort(compareSimilarity);
@@ -47,21 +67,35 @@ function setup() {
 
       return score2 - score1;
     }
-    
-    var k = 15;
-    for (var i = 0; i < k; i++) {
-      var name = data.users[i].name;
-      var div = createDiv(name + ': ' + similarityScores[name]);
-      resultDivs.push(div);
-      resultP.parent(div);
+
+    for (var i = 0; i < data.titles.length; i++) {
+      var title = data.titles[i];
+      if (user[title] === null) {
+        var k = 5;
+        var weightedSum = 0;
+        var similaritySum = 0;
+        for (var j = 0; j < k; j++) {
+          var name = data.users[j].name;
+          var sim = similarityScores[name];
+          var ratings = data.users[j];
+          var rating = ratings[title];
+          if (rating !== null) {
+            weightedSum += rating * sim;
+            similaritySum += sim;
+          }
+        }
+
+        var stars = nf(weightedSum / similaritySum, 1, 2);
+
+        var div = createDiv(title + ':' + stars);
+        resultDivs.push(div);
+        div.parent(resultP);
+      }
     }
   }
 
-  function euclideanDistance(name1, name2) {
-    var user1 = users[name1];
-    var user2 = users[name2];
-
-    var titles = getTitles(user1);
+  function euclideanDistance(user1, user2) {
+    var titles = data.titles;
 
     var sumSquares = 0;
     for (var i = 0; i < titles.length; i++) {
@@ -77,13 +111,5 @@ function setup() {
     var d = Math.sqrt(sumSquares);
     var similarity = 1 / (1 + d);
     return similarity;
-  }
-
-  function getTitles(user) {
-    var titles = Object.keys(user);
-    titles.splice(titles.indexOf("name"), 1);
-    titles.splice(titles.indexOf("timestamp"), 1);
-
-    return titles;
   }
 }
